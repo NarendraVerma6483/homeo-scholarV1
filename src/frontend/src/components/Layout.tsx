@@ -122,7 +122,7 @@ export function Layout({ children }: LayoutProps) {
                 <FlaskConical className="h-4 w-4 text-primary-foreground" />
               </div>
               <span className="font-display font-bold text-lg text-foreground group-hover:text-primary transition-colors duration-200">
-                Homeo Scholar
+                Med/Similia
               </span>
             </Link>
 

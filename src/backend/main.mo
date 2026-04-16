@@ -22,10 +22,12 @@ import RepertoryApi "mixins/repertory-api";
 import OrganonApi "mixins/organon-api";
 import SourcedRemedyApi "mixins/sourced-remedy-api";
 import CaseApi "mixins/case-api";
-import Migration "migration";
+import AdminApi "mixins/admin-api";
 
-(with migration = Migration.run)
 actor {
+  // --- Admin state ---
+  let adminPrincipals = Set.empty<Principal>();
+
   // --- Existing state ---
   let remedies = Map.empty<Text, RemedyTypes.Remedy>();
   let profiles = Map.empty<Principal, UserTypes.UserProfile>();
@@ -44,14 +46,15 @@ actor {
   let caseStore = Map.empty<Text, CaseTypes.SavedCase>();
 
   // --- Mixin includes ---
+  include AdminApi(adminPrincipals);
   include RemedyApi(remedies);
   include UserApi(profiles, sessions);
   include BookmarkApi(bookmarks);
   include ProgressApi(quizAttempts, remedyProgress, leaderboardStore);
   include LeaderboardApi(leaderboardStore);
   include SpacedRepApi(spacedRepStore, remedyIdIndex);
-  include RepertoryApi(repertoryStore);
-  include OrganonApi(organonStore);
-  include SourcedRemedyApi(sourcedRemedyStore);
+  include RepertoryApi(repertoryStore, adminPrincipals);
+  include OrganonApi(organonStore, adminPrincipals);
+  include SourcedRemedyApi(sourcedRemedyStore, adminPrincipals);
   include CaseApi(caseStore);
 };

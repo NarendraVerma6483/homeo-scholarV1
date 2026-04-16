@@ -8,6 +8,49 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const AphorismInput = IDL.Record({
+  'id' : IDL.Opt(IDL.Nat),
+  'keyThemes' : IDL.Vec(IDL.Text),
+  'section' : IDL.Text,
+  'number' : IDL.Nat,
+  'authenticText' : IDL.Text,
+  'commentary' : IDL.Text,
+});
+export const RepertoryRemedy = IDL.Record({
+  'remedyName' : IDL.Text,
+  'grade' : IDL.Nat,
+  'notes' : IDL.Text,
+  'remedyId' : IDL.Text,
+});
+export const RepertoryEntryInput = IDL.Record({
+  'id' : IDL.Opt(IDL.Text),
+  'description' : IDL.Text,
+  'symptomCategory' : IDL.Text,
+  'symptomName' : IDL.Text,
+  'remedies' : IDL.Vec(RepertoryRemedy),
+});
+export const MateriaSource = IDL.Variant({
+  'boericke' : IDL.Null,
+  'allensKeynotes' : IDL.Null,
+  'lotus' : IDL.Null,
+});
+export const SourcedRemedyModalities = IDL.Record({
+  'better' : IDL.Vec(IDL.Text),
+  'worse' : IDL.Vec(IDL.Text),
+});
+export const SourcedRemedyInput = IDL.Record({
+  'id' : IDL.Opt(IDL.Text),
+  'latinName' : IDL.Text,
+  'clinicalUses' : IDL.Vec(IDL.Text),
+  'source' : MateriaSource,
+  'physicalSymptoms' : IDL.Vec(IDL.Text),
+  'name' : IDL.Text,
+  'keynotes' : IDL.Vec(IDL.Text),
+  'modalities' : SourcedRemedyModalities,
+  'mentalSymptoms' : IDL.Vec(IDL.Text),
+  'constitution' : IDL.Text,
+  'remedyId' : IDL.Text,
+});
 export const Timestamp = IDL.Int;
 export const SpacedRepCard = IDL.Record({
   'lastReviewed' : Timestamp,
@@ -107,27 +150,12 @@ export const Remedy = IDL.Record({
   'category' : IDL.Text,
   'clinicalNotes' : IDL.Text,
 });
-export const RepertoryRemedy = IDL.Record({
-  'remedyName' : IDL.Text,
-  'grade' : IDL.Nat,
-  'notes' : IDL.Text,
-  'remedyId' : IDL.Text,
-});
 export const RepertoryEntry = IDL.Record({
   'id' : IDL.Text,
   'description' : IDL.Text,
   'symptomCategory' : IDL.Text,
   'symptomName' : IDL.Text,
   'remedies' : IDL.Vec(RepertoryRemedy),
-});
-export const MateriaSource = IDL.Variant({
-  'boericke' : IDL.Null,
-  'allensKeynotes' : IDL.Null,
-  'lotus' : IDL.Null,
-});
-export const SourcedRemedyModalities = IDL.Record({
-  'better' : IDL.Vec(IDL.Text),
-  'worse' : IDL.Vec(IDL.Text),
 });
 export const SourcedRemedy = IDL.Record({
   'id' : IDL.Text,
@@ -144,8 +172,31 @@ export const SourcedRemedy = IDL.Record({
 });
 
 export const idlService = IDL.Service({
+  'adminBulkImportAphorisms' : IDL.Func(
+      [IDL.Vec(AphorismInput)],
+      [IDL.Nat],
+      [],
+    ),
+  'adminBulkImportRepertoryEntries' : IDL.Func(
+      [IDL.Vec(RepertoryEntryInput)],
+      [IDL.Nat],
+      [],
+    ),
+  'adminBulkImportSourcedRemedies' : IDL.Func(
+      [IDL.Vec(SourcedRemedyInput)],
+      [IDL.Nat],
+      [],
+    ),
+  'adminDeleteAphorism' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  'adminDeleteRepertoryEntry' : IDL.Func([IDL.Text], [IDL.Bool], []),
+  'adminDeleteSourcedRemedy' : IDL.Func([IDL.Text], [IDL.Bool], []),
+  'adminUpsertAphorism' : IDL.Func([AphorismInput], [IDL.Nat], []),
+  'adminUpsertRepertoryEntry' : IDL.Func([RepertoryEntryInput], [IDL.Text], []),
+  'adminUpsertSourcedRemedy' : IDL.Func([SourcedRemedyInput], [IDL.Text], []),
+  'bootstrapAdmin' : IDL.Func([], [IDL.Bool], []),
   'deleteCase' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'deleteRemedy' : IDL.Func([IDL.Text], [], []),
+  'getAdminList' : IDL.Func([], [IDL.Vec(IDL.Principal)], []),
   'getAllCards' : IDL.Func([], [IDL.Vec(SpacedRepCard)], ['query']),
   'getAphorism' : IDL.Func([IDL.Nat], [IDL.Opt(Aphorism)], ['query']),
   'getCaseById' : IDL.Func([IDL.Text], [IDL.Opt(SavedCase)], ['query']),
@@ -172,7 +223,9 @@ export const idlService = IDL.Service({
       [IDL.Opt(SourcedRemedy)],
       ['query'],
     ),
+  'grantAdmin' : IDL.Func([IDL.Principal], [IDL.Bool], []),
   'initializeCards' : IDL.Func([], [], []),
+  'isAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'listAphorisms' : IDL.Func([], [IDL.Vec(Aphorism)], ['query']),
   'listMyCases' : IDL.Func([], [IDL.Vec(SavedCase)], ['query']),
   'listRemedies' : IDL.Func([], [IDL.Vec(Remedy)], ['query']),
@@ -190,6 +243,7 @@ export const idlService = IDL.Service({
     ),
   'recordReview' : IDL.Func([IDL.Text, IDL.Nat], [SpacedRepCard], []),
   'registerUser' : IDL.Func([IDL.Text], [], []),
+  'revokeAdmin' : IDL.Func([IDL.Principal], [IDL.Bool], []),
   'saveCaseAnalysis' : IDL.Func(
       [IDL.Text, IDL.Vec(IDL.Text), IDL.Text, IDL.Vec(IDL.Text)],
       [IDL.Text],
@@ -228,6 +282,49 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const AphorismInput = IDL.Record({
+    'id' : IDL.Opt(IDL.Nat),
+    'keyThemes' : IDL.Vec(IDL.Text),
+    'section' : IDL.Text,
+    'number' : IDL.Nat,
+    'authenticText' : IDL.Text,
+    'commentary' : IDL.Text,
+  });
+  const RepertoryRemedy = IDL.Record({
+    'remedyName' : IDL.Text,
+    'grade' : IDL.Nat,
+    'notes' : IDL.Text,
+    'remedyId' : IDL.Text,
+  });
+  const RepertoryEntryInput = IDL.Record({
+    'id' : IDL.Opt(IDL.Text),
+    'description' : IDL.Text,
+    'symptomCategory' : IDL.Text,
+    'symptomName' : IDL.Text,
+    'remedies' : IDL.Vec(RepertoryRemedy),
+  });
+  const MateriaSource = IDL.Variant({
+    'boericke' : IDL.Null,
+    'allensKeynotes' : IDL.Null,
+    'lotus' : IDL.Null,
+  });
+  const SourcedRemedyModalities = IDL.Record({
+    'better' : IDL.Vec(IDL.Text),
+    'worse' : IDL.Vec(IDL.Text),
+  });
+  const SourcedRemedyInput = IDL.Record({
+    'id' : IDL.Opt(IDL.Text),
+    'latinName' : IDL.Text,
+    'clinicalUses' : IDL.Vec(IDL.Text),
+    'source' : MateriaSource,
+    'physicalSymptoms' : IDL.Vec(IDL.Text),
+    'name' : IDL.Text,
+    'keynotes' : IDL.Vec(IDL.Text),
+    'modalities' : SourcedRemedyModalities,
+    'mentalSymptoms' : IDL.Vec(IDL.Text),
+    'constitution' : IDL.Text,
+    'remedyId' : IDL.Text,
+  });
   const Timestamp = IDL.Int;
   const SpacedRepCard = IDL.Record({
     'lastReviewed' : Timestamp,
@@ -324,27 +421,12 @@ export const idlFactory = ({ IDL }) => {
     'category' : IDL.Text,
     'clinicalNotes' : IDL.Text,
   });
-  const RepertoryRemedy = IDL.Record({
-    'remedyName' : IDL.Text,
-    'grade' : IDL.Nat,
-    'notes' : IDL.Text,
-    'remedyId' : IDL.Text,
-  });
   const RepertoryEntry = IDL.Record({
     'id' : IDL.Text,
     'description' : IDL.Text,
     'symptomCategory' : IDL.Text,
     'symptomName' : IDL.Text,
     'remedies' : IDL.Vec(RepertoryRemedy),
-  });
-  const MateriaSource = IDL.Variant({
-    'boericke' : IDL.Null,
-    'allensKeynotes' : IDL.Null,
-    'lotus' : IDL.Null,
-  });
-  const SourcedRemedyModalities = IDL.Record({
-    'better' : IDL.Vec(IDL.Text),
-    'worse' : IDL.Vec(IDL.Text),
   });
   const SourcedRemedy = IDL.Record({
     'id' : IDL.Text,
@@ -361,8 +443,35 @@ export const idlFactory = ({ IDL }) => {
   });
   
   return IDL.Service({
+    'adminBulkImportAphorisms' : IDL.Func(
+        [IDL.Vec(AphorismInput)],
+        [IDL.Nat],
+        [],
+      ),
+    'adminBulkImportRepertoryEntries' : IDL.Func(
+        [IDL.Vec(RepertoryEntryInput)],
+        [IDL.Nat],
+        [],
+      ),
+    'adminBulkImportSourcedRemedies' : IDL.Func(
+        [IDL.Vec(SourcedRemedyInput)],
+        [IDL.Nat],
+        [],
+      ),
+    'adminDeleteAphorism' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    'adminDeleteRepertoryEntry' : IDL.Func([IDL.Text], [IDL.Bool], []),
+    'adminDeleteSourcedRemedy' : IDL.Func([IDL.Text], [IDL.Bool], []),
+    'adminUpsertAphorism' : IDL.Func([AphorismInput], [IDL.Nat], []),
+    'adminUpsertRepertoryEntry' : IDL.Func(
+        [RepertoryEntryInput],
+        [IDL.Text],
+        [],
+      ),
+    'adminUpsertSourcedRemedy' : IDL.Func([SourcedRemedyInput], [IDL.Text], []),
+    'bootstrapAdmin' : IDL.Func([], [IDL.Bool], []),
     'deleteCase' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'deleteRemedy' : IDL.Func([IDL.Text], [], []),
+    'getAdminList' : IDL.Func([], [IDL.Vec(IDL.Principal)], []),
     'getAllCards' : IDL.Func([], [IDL.Vec(SpacedRepCard)], ['query']),
     'getAphorism' : IDL.Func([IDL.Nat], [IDL.Opt(Aphorism)], ['query']),
     'getCaseById' : IDL.Func([IDL.Text], [IDL.Opt(SavedCase)], ['query']),
@@ -389,7 +498,9 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(SourcedRemedy)],
         ['query'],
       ),
+    'grantAdmin' : IDL.Func([IDL.Principal], [IDL.Bool], []),
     'initializeCards' : IDL.Func([], [], []),
+    'isAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'listAphorisms' : IDL.Func([], [IDL.Vec(Aphorism)], ['query']),
     'listMyCases' : IDL.Func([], [IDL.Vec(SavedCase)], ['query']),
     'listRemedies' : IDL.Func([], [IDL.Vec(Remedy)], ['query']),
@@ -407,6 +518,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'recordReview' : IDL.Func([IDL.Text, IDL.Nat], [SpacedRepCard], []),
     'registerUser' : IDL.Func([IDL.Text], [], []),
+    'revokeAdmin' : IDL.Func([IDL.Principal], [IDL.Bool], []),
     'saveCaseAnalysis' : IDL.Func(
         [IDL.Text, IDL.Vec(IDL.Text), IDL.Text, IDL.Vec(IDL.Text)],
         [IDL.Text],

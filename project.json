@@ -1,24 +1,27 @@
 {
-  "overview": "Homeo Scholar is a premium homoeopathic knowledge platform for students and physicians. It provides a multi-source Materia Medica browser (Boericke, Allen's Keynotes, Lotus), interactive flashcards, quizzes with leaderboards, spaced repetition, a Repertory case diary, and an Organon reader — all with a professional premium UI supporting dark and light themes.",
+  "overview": "Homeo Scholar is a premium homoeopathic education and practice platform for students and physicians. It features a comprehensive Materia Medica browser with exact citation text from Boericke, Allen's Keynotes, and Lotus, an advanced Repertory with classical multi-rubric analysis and case diary, Organon of Medicine with commentary, flashcards, quizzes, spaced repetition, leaderboards, and a full admin panel with role-based access.",
   "features": [
-    "Multi-source Materia Medica browser with Boericke, Allen's Keynotes, and Lotus tabs",
-    "Persistent Repertory case diary — save and name clinical cases with symptom selections and notes",
-    "Premium home screen with refined typography, elevated cards, and subtle gradients",
-    "Interactive flashcards (Symptom→Remedy and Multiple Choice formats)",
-    "Quizzes with difficulty levels and leaderboards (top 10 per difficulty)",
-    "Spaced repetition with adaptive algorithm",
-    "Organon reader with all 291 aphorisms and student commentary",
-    "Internet Identity login with persistent study progress and bookmarks"
+    "Materia Medica browser with Boericke, Allen's, and Lotus exact citation text",
+    "Repertory tool with classical sum-of-grades multi-rubric analysis",
+    "Persistent case diary — save and review clinical cases",
+    "Full-featured admin panel with role-based access control",
+    "Bulk JSON import for seeding remedy, aphorism, and repertory content",
+    "Organon with 291 aphorisms and student-friendly commentary",
+    "Flashcards and quizzes with spaced repetition and streaks",
+    "Global leaderboard per difficulty level",
+    "Dark and light themes saved to user account",
+    "Internet Identity login with persistent sessions"
   ],
   "category": "education",
   "tags": [
     "homoeopathy",
-    "medical-education",
     "materia-medica",
-    "flashcards",
-    "quizzes",
+    "repertory",
+    "education",
+    "medical",
     "case-analysis",
-    "spaced-repetition"
+    "flashcards",
+    "organon"
   ],
-  "last_updated": "2026-04-16T02:03:16.873Z"
+  "last_updated": "2026-04-16T06:36:45.266Z"
 }

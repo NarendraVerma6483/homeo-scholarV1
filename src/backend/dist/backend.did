@@ -48,6 +48,20 @@ type SourcedRemedyModalities =
    better: vec text;
    worse: vec text;
  };
+type SourcedRemedyInput = 
+ record {
+   clinicalUses: vec text;
+   constitution: text;
+   id: opt text;
+   keynotes: vec text;
+   latinName: text;
+   mentalSymptoms: vec text;
+   modalities: SourcedRemedyModalities;
+   name: text;
+   physicalSymptoms: vec text;
+   remedyId: text;
+   source: MateriaSource;
+ };
 type SourcedRemedy = 
  record {
    clinicalUses: vec text;
@@ -79,6 +93,14 @@ type RepertoryRemedy =
    notes: text;
    remedyId: text;
    remedyName: text;
+ };
+type RepertoryEntryInput = 
+ record {
+   description: text;
+   id: opt text;
+   remedies: vec RepertoryRemedy;
+   symptomCategory: text;
+   symptomName: text;
  };
 type RepertoryEntry = 
  record {
@@ -141,6 +163,15 @@ type Difficulty =
    beginner;
    intermediate;
  };
+type AphorismInput = 
+ record {
+   authenticText: text;
+   commentary: text;
+   id: opt nat;
+   keyThemes: vec text;
+   number: nat;
+   section: text;
+ };
 type Aphorism = 
  record {
    authenticText: text;
@@ -151,8 +182,19 @@ type Aphorism =
    section: text;
  };
 service : {
+  adminBulkImportAphorisms: (inputs: vec AphorismInput) -> (nat);
+  adminBulkImportRepertoryEntries: (inputs: vec RepertoryEntryInput) -> (nat);
+  adminBulkImportSourcedRemedies: (inputs: vec SourcedRemedyInput) -> (nat);
+  adminDeleteAphorism: (id: nat) -> (bool);
+  adminDeleteRepertoryEntry: (id: text) -> (bool);
+  adminDeleteSourcedRemedy: (id: text) -> (bool);
+  adminUpsertAphorism: (input: AphorismInput) -> (nat);
+  adminUpsertRepertoryEntry: (input: RepertoryEntryInput) -> (text);
+  adminUpsertSourcedRemedy: (input: SourcedRemedyInput) -> (text);
+  bootstrapAdmin: () -> (bool);
   deleteCase: (id: text) -> (bool);
   deleteRemedy: (id: text) -> ();
+  getAdminList: () -> (vec principal);
   getAllCards: () -> (vec SpacedRepCard) query;
   getAphorism: (number: nat) -> (opt Aphorism) query;
   getCaseById: (id: text) -> (opt SavedCase) query;
@@ -167,7 +209,9 @@ service : {
   getRemedy: (id: text) -> (opt Remedy) query;
   getRepertoryEntry: (id: text) -> (opt RepertoryEntry) query;
   getSourcedRemedy: (id: text) -> (opt SourcedRemedy) query;
+  grantAdmin: ("principal": principal) -> (bool);
   initializeCards: () -> ();
+  isAdmin: () -> (bool) query;
   listAphorisms: () -> (vec Aphorism) query;
   listMyCases: () -> (vec SavedCase) query;
   listRemedies: () -> (vec Remedy) query;
@@ -178,6 +222,7 @@ service : {
   listSourcesByRemedyName: (name: text) -> (vec SourcedRemedy) query;
   recordReview: (remedyId: text, quality: nat) -> (SpacedRepCard);
   registerUser: (displayName: text) -> ();
+  revokeAdmin: ("principal": principal) -> (bool);
   saveCaseAnalysis: (name: text, selectedSymptoms: vec text, clinicalNotes:
    text, matchingRemedies: vec text) -> (text);
   saveQuizAttempt: (attempt: QuizAttempt) -> ();

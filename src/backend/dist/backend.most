@@ -1,4 +1,4 @@
-// Version: 3.0.0
+// Version: 1.0.0
 type Aphorism__21183750 =
   {
     authenticText : Text;
@@ -37,10 +37,6 @@ type List__790383201<T> =
     var blocks : [var [var ?T]];
     var elementIndex : Nat__490723111
   };
-type Map__158565046<K, V> = Map__297112838<K, V>;
-type Map__297112838<K, V> =
-  {var root : Node__46230540<K, V>; var size : Nat__490723111};
-type Map__605269027<K, V> = Map__158565046<K, V>;
 type MateriaSource__816818211 = {#allensKeynotes; #boericke; #lotus};
 type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
@@ -48,23 +44,6 @@ type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
 type Node__92254746<T> =
   {#internal : Internal__667636161<T>; #leaf : Leaf__520550824<T>};
-type OldMateriaSource__361753297 = {#allensKeynotes; #boericke};
-type OldSourcedRemedyModalities__778165280 =
-  {better : [Text]; worse : [Text]};
-type OldSourcedRemedy__441738896 =
-  {
-    clinicalUses : [Text];
-    constitution : Text;
-    id : Text;
-    keynotes : [Text];
-    latinName : Text;
-    mentalSymptoms : [Text];
-    modalities : OldSourcedRemedyModalities__778165280;
-    name : Text;
-    physicalSymptoms : [Text];
-    remedyId : Text;
-    source : OldMateriaSource__361753297
-  };
 type QuizAttempt__995573549 =
   {
     attemptId : Text;
@@ -167,69 +146,9 @@ type UserProfile__1009003526 =
     principal : Principal;
     themePreference : ThemePreference__789203707
   };
-actor ({
-  stable bookmarks :
-    {
-      var root : Node__46230540<Principal, Set__532252804<Text>>;
-      var size : Nat__490723111
-    };
-  stable caseStore :
-    {
-      var root : Node__46230540<Text, SavedCase__180222803>;
-      var size : Nat__490723111
-    };
-  stable leaderboardStore :
-    {
-      var root :
-        Node__46230540<Text, List__415060402<LeaderboardEntry__684075585>>;
-      var size : Nat__490723111
-    };
-  stable organonStore :
-    {
-      var root : Node__46230540<Nat, Aphorism__21183750>;
-      var size : Nat__490723111
-    };
-  stable profiles :
-    {
-      var root : Node__46230540<Principal, UserProfile__1009003526>;
-      var size : Nat__490723111
-    };
-  stable quizAttempts :
-    {
-      var blockIndex : Nat__490723111;
-      var blocks : [var [var ?QuizAttempt__995573549]];
-      var elementIndex : Nat__490723111
-    };
-  stable remedies :
-    {
-      var root : Node__46230540<Text, Remedy__628615571>;
-      var size : Nat__490723111
-    };
-  stable remedyIdIndex :
-    {var root : Node__46230540<Text, Text>; var size : Nat__490723111};
-  stable remedyProgress :
-    {
-      var root : Node__46230540<Text, RemedyProgress__932794992>;
-      var size : Nat__490723111
-    };
-  stable repertoryStore :
-    {
-      var root : Node__46230540<Text, RepertoryEntry__69520524>;
-      var size : Nat__490723111
-    };
-  stable sessions :
-    {
-      var blockIndex : Nat__490723111;
-      var blocks : [var [var ?StudySession__788292225]];
-      var elementIndex : Nat__490723111
-    };
-  in sourcedRemedyStore : Map__605269027<Text, OldSourcedRemedy__441738896>;
-  stable spacedRepStore :
-    {
-      var root : Node__46230540<Text, SpacedRepCard__238132625>;
-      var size : Nat__490723111
-    }
-}, {
+actor {
+  stable adminPrincipals :
+    {var root : Node__92254746<Principal>; var size : Nat__490723111};
   stable bookmarks :
     {
       var root : Node__46230540<Principal, Set__532252804<Text>>;
@@ -295,4 +214,4 @@ actor ({
       var root : Node__46230540<Text, SpacedRepCard__238132625>;
       var size : Nat__490723111
     }
-}) ;
+};

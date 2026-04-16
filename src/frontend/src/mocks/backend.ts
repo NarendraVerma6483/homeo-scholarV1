@@ -9,8 +9,11 @@ import type {
   LeaderboardEntry,
   SpacedRepCard,
   RepertoryEntry,
+  RepertoryEntryInput,
   Aphorism,
+  AphorismInput,
   SourcedRemedy,
+  SourcedRemedyInput,
   SavedCase,
 } from "../backend";
 import { Difficulty, MateriaSource, StudyMode, ThemePreference } from "../backend";
@@ -368,4 +371,20 @@ export const mockBackend: backendInterface = {
       c.name.toLowerCase().includes(keyword.toLowerCase()) ||
       c.clinicalNotes.toLowerCase().includes(keyword.toLowerCase())
     ),
+
+  // Admin
+  bootstrapAdmin: async (): Promise<boolean> => true,
+  isAdmin: async (): Promise<boolean> => true,
+  grantAdmin: async (_principal: Principal): Promise<boolean> => true,
+  revokeAdmin: async (_principal: Principal): Promise<boolean> => true,
+  getAdminList: async (): Promise<Principal[]> => [],
+  adminUpsertSourcedRemedy: async (_input: SourcedRemedyInput): Promise<string> => "mock-id",
+  adminDeleteSourcedRemedy: async (_id: string): Promise<boolean> => true,
+  adminBulkImportSourcedRemedies: async (_inputs: SourcedRemedyInput[]): Promise<bigint> => BigInt(_inputs.length),
+  adminUpsertAphorism: async (_input: AphorismInput): Promise<bigint> => BigInt(0),
+  adminDeleteAphorism: async (_id: bigint): Promise<boolean> => true,
+  adminBulkImportAphorisms: async (_inputs: AphorismInput[]): Promise<bigint> => BigInt(_inputs.length),
+  adminUpsertRepertoryEntry: async (_input: RepertoryEntryInput): Promise<string> => "mock-id",
+  adminDeleteRepertoryEntry: async (_id: string): Promise<boolean> => true,
+  adminBulkImportRepertoryEntries: async (_inputs: RepertoryEntryInput[]): Promise<bigint> => BigInt(_inputs.length),
 };

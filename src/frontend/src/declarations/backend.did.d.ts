@@ -18,6 +18,14 @@ export interface Aphorism {
   'authenticText' : string,
   'commentary' : string,
 }
+export interface AphorismInput {
+  'id' : [] | [bigint],
+  'keyThemes' : Array<string>,
+  'section' : string,
+  'number' : bigint,
+  'authenticText' : string,
+  'commentary' : string,
+}
 export type Difficulty = { 'intermediate' : null } |
   { 'beginner' : null } |
   { 'advanced' : null };
@@ -68,6 +76,13 @@ export interface RepertoryEntry {
   'symptomName' : string,
   'remedies' : Array<RepertoryRemedy>,
 }
+export interface RepertoryEntryInput {
+  'id' : [] | [string],
+  'description' : string,
+  'symptomCategory' : string,
+  'symptomName' : string,
+  'remedies' : Array<RepertoryRemedy>,
+}
 export interface RepertoryRemedy {
   'remedyName' : string,
   'grade' : bigint,
@@ -86,6 +101,19 @@ export interface SavedCase {
 }
 export interface SourcedRemedy {
   'id' : string,
+  'latinName' : string,
+  'clinicalUses' : Array<string>,
+  'source' : MateriaSource,
+  'physicalSymptoms' : Array<string>,
+  'name' : string,
+  'keynotes' : Array<string>,
+  'modalities' : SourcedRemedyModalities,
+  'mentalSymptoms' : Array<string>,
+  'constitution' : string,
+  'remedyId' : string,
+}
+export interface SourcedRemedyInput {
+  'id' : [] | [string],
   'latinName' : string,
   'clinicalUses' : Array<string>,
   'source' : MateriaSource,
@@ -137,8 +165,25 @@ export interface UserStats {
   'totalStudyTimeSecs' : bigint,
 }
 export interface _SERVICE {
+  'adminBulkImportAphorisms' : ActorMethod<[Array<AphorismInput>], bigint>,
+  'adminBulkImportRepertoryEntries' : ActorMethod<
+    [Array<RepertoryEntryInput>],
+    bigint
+  >,
+  'adminBulkImportSourcedRemedies' : ActorMethod<
+    [Array<SourcedRemedyInput>],
+    bigint
+  >,
+  'adminDeleteAphorism' : ActorMethod<[bigint], boolean>,
+  'adminDeleteRepertoryEntry' : ActorMethod<[string], boolean>,
+  'adminDeleteSourcedRemedy' : ActorMethod<[string], boolean>,
+  'adminUpsertAphorism' : ActorMethod<[AphorismInput], bigint>,
+  'adminUpsertRepertoryEntry' : ActorMethod<[RepertoryEntryInput], string>,
+  'adminUpsertSourcedRemedy' : ActorMethod<[SourcedRemedyInput], string>,
+  'bootstrapAdmin' : ActorMethod<[], boolean>,
   'deleteCase' : ActorMethod<[string], boolean>,
   'deleteRemedy' : ActorMethod<[string], undefined>,
+  'getAdminList' : ActorMethod<[], Array<Principal>>,
   'getAllCards' : ActorMethod<[], Array<SpacedRepCard>>,
   'getAphorism' : ActorMethod<[bigint], [] | [Aphorism]>,
   'getCaseById' : ActorMethod<[string], [] | [SavedCase]>,
@@ -153,7 +198,9 @@ export interface _SERVICE {
   'getRemedy' : ActorMethod<[string], [] | [Remedy]>,
   'getRepertoryEntry' : ActorMethod<[string], [] | [RepertoryEntry]>,
   'getSourcedRemedy' : ActorMethod<[string], [] | [SourcedRemedy]>,
+  'grantAdmin' : ActorMethod<[Principal], boolean>,
   'initializeCards' : ActorMethod<[], undefined>,
+  'isAdmin' : ActorMethod<[], boolean>,
   'listAphorisms' : ActorMethod<[], Array<Aphorism>>,
   'listMyCases' : ActorMethod<[], Array<SavedCase>>,
   'listRemedies' : ActorMethod<[], Array<Remedy>>,
@@ -166,6 +213,7 @@ export interface _SERVICE {
   'listSourcesByRemedyName' : ActorMethod<[string], Array<SourcedRemedy>>,
   'recordReview' : ActorMethod<[string, bigint], SpacedRepCard>,
   'registerUser' : ActorMethod<[string], undefined>,
+  'revokeAdmin' : ActorMethod<[Principal], boolean>,
   'saveCaseAnalysis' : ActorMethod<
     [string, Array<string>, string, Array<string>],
     string

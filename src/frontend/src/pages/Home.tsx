@@ -160,15 +160,15 @@ export default function HomePage() {
                 className="gap-1.5 border-primary/30 bg-primary/5 px-4 py-1.5 text-xs font-medium tracking-widest uppercase text-primary"
               >
                 <Sparkles className="h-3 w-3" />
-                Med / Similiar — Knowledge Platform
+                Med / Similia — Knowledge Platform
               </Badge>
             </div>
 
             {/* Main headline */}
             <h1 className="mb-5 font-display text-6xl font-bold tracking-tight text-foreground sm:text-7xl lg:text-8xl">
-              Med /{" "}
+              Homoeo{" "}
               <span className="relative inline-block">
-                <span className="text-primary">Similiar</span>
+                <span className="text-primary">Scholar</span>
                 <svg
                   aria-hidden="true"
                   className="absolute -bottom-2 left-0 w-full"

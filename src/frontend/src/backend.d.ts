@@ -28,6 +28,30 @@ export interface SourcedRemedy {
 }
 export type Timestamp = bigint;
 export type Time = bigint;
+export interface SourcedRemedyInput {
+    id?: string;
+    latinName: string;
+    clinicalUses: Array<string>;
+    source: MateriaSource;
+    physicalSymptoms: Array<string>;
+    name: string;
+    keynotes: Array<string>;
+    modalities: SourcedRemedyModalities;
+    mentalSymptoms: Array<string>;
+    constitution: string;
+    remedyId: string;
+}
+export interface SourcedRemedyModalities {
+    better: Array<string>;
+    worse: Array<string>;
+}
+export interface RepertoryEntryInput {
+    id?: string;
+    description: string;
+    symptomCategory: string;
+    symptomName: string;
+    remedies: Array<RepertoryRemedy>;
+}
 export interface LeaderboardEntry {
     total: bigint;
     displayName: string;
@@ -37,9 +61,13 @@ export interface LeaderboardEntry {
     timestamp: Timestamp;
     percentage: number;
 }
-export interface SourcedRemedyModalities {
-    better: Array<string>;
-    worse: Array<string>;
+export interface AphorismInput {
+    id?: bigint;
+    keyThemes: Array<string>;
+    section: string;
+    number: bigint;
+    authenticText: string;
+    commentary: string;
 }
 export interface Aphorism {
     id: bigint;
@@ -142,8 +170,19 @@ export enum ThemePreference {
     light = "light"
 }
 export interface backendInterface {
+    adminBulkImportAphorisms(inputs: Array<AphorismInput>): Promise<bigint>;
+    adminBulkImportRepertoryEntries(inputs: Array<RepertoryEntryInput>): Promise<bigint>;
+    adminBulkImportSourcedRemedies(inputs: Array<SourcedRemedyInput>): Promise<bigint>;
+    adminDeleteAphorism(id: bigint): Promise<boolean>;
+    adminDeleteRepertoryEntry(id: string): Promise<boolean>;
+    adminDeleteSourcedRemedy(id: string): Promise<boolean>;
+    adminUpsertAphorism(input: AphorismInput): Promise<bigint>;
+    adminUpsertRepertoryEntry(input: RepertoryEntryInput): Promise<string>;
+    adminUpsertSourcedRemedy(input: SourcedRemedyInput): Promise<string>;
+    bootstrapAdmin(): Promise<boolean>;
     deleteCase(id: string): Promise<boolean>;
     deleteRemedy(id: string): Promise<void>;
+    getAdminList(): Promise<Array<Principal>>;
     getAllCards(): Promise<Array<SpacedRepCard>>;
     getAphorism(number: bigint): Promise<Aphorism | null>;
     getCaseById(id: string): Promise<SavedCase | null>;
@@ -158,7 +197,9 @@ export interface backendInterface {
     getRemedy(id: string): Promise<Remedy | null>;
     getRepertoryEntry(id: string): Promise<RepertoryEntry | null>;
     getSourcedRemedy(id: string): Promise<SourcedRemedy | null>;
+    grantAdmin(principal: Principal): Promise<boolean>;
     initializeCards(): Promise<void>;
+    isAdmin(): Promise<boolean>;
     listAphorisms(): Promise<Array<Aphorism>>;
     listMyCases(): Promise<Array<SavedCase>>;
     listRemedies(): Promise<Array<Remedy>>;
@@ -168,6 +209,7 @@ export interface backendInterface {
     listSourcesByRemedyName(name: string): Promise<Array<SourcedRemedy>>;
     recordReview(remedyId: string, quality: bigint): Promise<SpacedRepCard>;
     registerUser(displayName: string): Promise<void>;
+    revokeAdmin(principal: Principal): Promise<boolean>;
     saveCaseAnalysis(name: string, selectedSymptoms: Array<string>, clinicalNotes: string, matchingRemedies: Array<string>): Promise<string>;
     saveQuizAttempt(attempt: QuizAttempt): Promise<void>;
     saveStudySession(session: StudySession): Promise<void>;

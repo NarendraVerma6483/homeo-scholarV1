@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
+  BarChart3,
   BookOpen,
   ChevronDown,
   ChevronRight,
@@ -77,6 +79,14 @@ const CATEGORY_COLORS: Record<string, string> = {
   Throat: "bg-destructive/15 text-destructive/80 border-destructive/25",
 };
 
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface RemedyScore {
+  remedyName: string;
+  grades: number[]; // one per selected rubric, 0 if absent
+  total: number;
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function formatDate(ts: bigint): string {
@@ -92,7 +102,307 @@ function formatDate(ts: bigint): string {
   }
 }
 
-// ─── Grade Components ───────────────────────────────────────────────────────
+/** Compute classical sum-of-grades analysis from selected rubrics */
+function computeClassicalAnalysis(
+  selectedEntries: RepertoryEntry[],
+): RemedyScore[] {
+  const allRemedyNames = new Set<string>();
+  for (const entry of selectedEntries) {
+    for (const r of entry.remedies) {
+      allRemedyNames.add(r.remedyName);
+    }
+  }
+
+  const scores: RemedyScore[] = [];
+  for (const name of allRemedyNames) {
+    const grades = selectedEntries.map((entry) => {
+      const match = entry.remedies.find((r) => r.remedyName === name);
+      return match ? Number(match.grade) : 0;
+    });
+    const total = grades.reduce((a, b) => a + b, 0);
+    // Only include remedies that appear in at least one rubric with grade > 0
+    if (total > 0) {
+      scores.push({ remedyName: name, grades, total });
+    }
+  }
+
+  return scores.sort((a, b) => b.total - a.total);
+}
+
+// ─── Grade Cell ──────────────────────────────────────────────────────────────
+
+function GradeCell({ grade }: { grade: number }) {
+  if (grade === 0) {
+    return (
+      <span className="inline-flex items-center justify-center w-8 text-muted-foreground/40 text-sm font-mono">
+        —
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5",
+        grade === 3
+          ? "text-primary"
+          : grade === 2
+            ? "text-muted-foreground"
+            : "text-muted-foreground/60",
+      )}
+      title={
+        grade === 3
+          ? "Grade 3 — Keynote"
+          : grade === 2
+            ? "Grade 2 — Notable"
+            : "Grade 1 — Minor"
+      }
+    >
+      {[1, 2, 3].map((dot) => (
+        <span
+          key={dot}
+          className={cn(
+            "inline-block w-2 h-2 rounded-full border",
+            dot <= grade
+              ? "bg-current border-current"
+              : "border-current opacity-20",
+          )}
+        />
+      ))}
+    </span>
+  );
+}
+
+// ─── Grade Badge (total score) ────────────────────────────────────────────────
+
+function TotalScoreBadge({ score, rank }: { score: number; rank: number }) {
+  const isTop = rank === 0;
+  const isSecond = rank === 1;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center justify-center min-w-[2rem] h-7 px-2 rounded-lg text-sm font-bold font-mono tabular-nums",
+        isTop
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : isSecond
+            ? "bg-primary/20 text-primary"
+            : "bg-muted text-foreground",
+      )}
+    >
+      {score}
+    </span>
+  );
+}
+
+// ─── Classical Analysis Panel ────────────────────────────────────────────────
+
+function ClassicalAnalysisPanel({
+  selectedEntries,
+  onClear,
+}: {
+  selectedEntries: RepertoryEntry[];
+  onClear: () => void;
+}) {
+  const scores = useMemo(
+    () => computeClassicalAnalysis(selectedEntries),
+    [selectedEntries],
+  );
+
+  const rubricLabels = selectedEntries.map((e) => e.symptomName);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 8 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      className="rounded-xl border border-primary/25 bg-card shadow-medical-sm overflow-hidden mb-8"
+      data-ocid="analysis.panel"
+    >
+      {/* Panel header */}
+      <div className="flex items-center justify-between px-5 py-4 bg-primary/5 border-b border-primary/15">
+        <div className="flex items-center gap-2.5">
+          <BarChart3 className="w-4 h-4 text-primary" />
+          <h2 className="font-display font-semibold text-base text-foreground">
+            Classical Repertory Analysis
+          </h2>
+          <Badge
+            variant="outline"
+            className="text-xs border-primary/30 text-primary py-0"
+          >
+            {selectedEntries.length} rubrics
+          </Badge>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+          onClick={onClear}
+          data-ocid="analysis.clear_button"
+        >
+          <X className="w-3.5 h-3.5" />
+          Clear selection
+        </Button>
+      </div>
+
+      {/* Selected rubrics legend */}
+      <div className="px-5 py-3 border-b border-border/60 bg-muted/20">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+          Selected Rubrics
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {selectedEntries.map((entry, i) => (
+            <span
+              key={entry.id}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-background border border-border text-xs text-foreground"
+            >
+              <span className="font-mono text-muted-foreground font-semibold">
+                R{i + 1}
+              </span>
+              <span className="max-w-[160px] truncate">
+                {entry.symptomName}
+              </span>
+              <span
+                className={cn(
+                  "text-xs px-1.5 py-0.5 rounded",
+                  CATEGORY_COLORS[entry.symptomCategory] ??
+                    "bg-muted text-muted-foreground border-border",
+                )}
+              >
+                {entry.symptomCategory}
+              </span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Grade legend */}
+      <div className="px-5 py-2.5 border-b border-border/40 flex items-center gap-5 text-xs text-muted-foreground bg-background/40">
+        <span className="font-medium uppercase tracking-wide">Grade key:</span>
+        <span className="flex items-center gap-1.5">
+          <GradeCell grade={3} />
+          <span>3 — Keynote (bold)</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <GradeCell grade={2} />
+          <span>2 — Notable (italic)</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <GradeCell grade={1} />
+          <span>1 — Minor (plain)</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="text-muted-foreground/40 font-mono text-sm">—</span>
+          <span>Absent (0)</span>
+        </span>
+      </div>
+
+      {/* Results table */}
+      {scores.length === 0 ? (
+        <div
+          className="flex flex-col items-center gap-3 py-10 text-center"
+          data-ocid="analysis.empty_state"
+        >
+          <BarChart3 className="w-8 h-8 text-muted-foreground/30" />
+          <p className="font-display text-sm font-medium text-muted-foreground">
+            No remedies matched the selected rubrics
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm" data-ocid="analysis.table">
+            <thead>
+              <tr className="border-b border-border/60 bg-muted/30">
+                <th className="text-left py-3 pl-5 pr-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider w-8">
+                  #
+                </th>
+                <th className="text-left py-3 px-3 font-semibold text-xs text-muted-foreground uppercase tracking-wider min-w-[160px]">
+                  Remedy
+                </th>
+                {rubricLabels.map((label, i) => (
+                  <th
+                    key={`col-${i + 1}`}
+                    className="text-center py-3 px-2 font-semibold text-xs text-muted-foreground uppercase tracking-wider max-w-[80px]"
+                    title={label}
+                  >
+                    <span className="font-mono text-primary/70">R{i + 1}</span>
+                  </th>
+                ))}
+                <th className="text-center py-3 pl-3 pr-5 font-semibold text-xs text-muted-foreground uppercase tracking-wider">
+                  Total
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {scores.map((row, i) => (
+                <motion.tr
+                  key={row.remedyName}
+                  initial={{ opacity: 0, x: -4 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.03, duration: 0.2 }}
+                  className={cn(
+                    "border-b border-border/30 transition-colors",
+                    i === 0
+                      ? "bg-primary/5 hover:bg-primary/8"
+                      : i === 1
+                        ? "bg-primary/[0.02] hover:bg-muted/30"
+                        : "hover:bg-muted/20",
+                  )}
+                  data-ocid={`analysis.row.${i + 1}`}
+                >
+                  <td className="py-3 pl-5 pr-3 text-xs text-muted-foreground font-mono">
+                    {i + 1}
+                  </td>
+                  <td className="py-3 px-3">
+                    <span
+                      className={cn(
+                        "font-medium",
+                        i === 0 ? "text-foreground" : "text-foreground/80",
+                      )}
+                    >
+                      {row.remedyName}
+                    </span>
+                    {i === 0 && (
+                      <Badge
+                        variant="outline"
+                        className="ml-2 text-[10px] py-0 px-1.5 border-primary/30 text-primary"
+                      >
+                        Top
+                      </Badge>
+                    )}
+                  </td>
+                  {row.grades.map((g, gi) => (
+                    <td
+                      key={`grade-${row.remedyName}-${selectedEntries[gi]?.id ?? gi}`}
+                      className="py-3 px-2 text-center"
+                      data-ocid={`analysis.grade.${i + 1}.${gi + 1}`}
+                    >
+                      <GradeCell grade={g} />
+                    </td>
+                  ))}
+                  <td className="py-3 pl-3 pr-5 text-center">
+                    <TotalScoreBadge score={row.total} rank={i} />
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {scores.length > 0 && (
+        <div className="px-5 py-3 border-t border-border/40 bg-muted/10">
+          <p className="text-xs text-muted-foreground">
+            Scores computed by classical sum-of-grades method — each remedy's
+            grades across all selected rubrics are summed. Higher total =
+            stronger indication.
+          </p>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Single-Rubric Remedy Display ─────────────────────────────────────────────
 
 function GradeIndicator({ grade }: { grade: bigint }) {
   const g = Number(grade);
@@ -128,8 +438,6 @@ function GradeIndicator({ grade }: { grade: bigint }) {
     </span>
   );
 }
-
-// ─── Remedy Row ─────────────────────────────────────────────────────────────
 
 function RemedyRow({
   remedy,
@@ -176,16 +484,20 @@ function RemedyRow({
   );
 }
 
-// ─── Symptom Card (Accordion) ───────────────────────────────────────────────
+// ─── Symptom Card (Accordion + Checkbox) ─────────────────────────────────────
 
 function SymptomCard({
   entry,
   index,
   defaultOpen = false,
+  isSelected,
+  onToggleSelect,
 }: {
   entry: RepertoryEntry;
   index: number;
   defaultOpen?: boolean;
+  isSelected: boolean;
+  onToggleSelect: (entry: RepertoryEntry) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const sortedRemedies = useMemo(
@@ -201,48 +513,80 @@ function SymptomCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index * 0.04, 0.3) }}
-      className="rounded-xl border border-border bg-card shadow-medical-sm overflow-hidden"
+      className={cn(
+        "rounded-xl border bg-card shadow-medical-sm overflow-hidden transition-smooth",
+        isSelected
+          ? "border-primary/50 ring-1 ring-primary/20"
+          : "border-border",
+      )}
       data-ocid={`repertory.item.${index + 1}`}
     >
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-start gap-4 p-5 text-left hover:bg-muted/20 transition-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-        aria-expanded={open}
-        data-ocid={`repertory.toggle.${index + 1}`}
-      >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-2">
-            <span
-              className={cn(
-                "inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border",
-                catColor,
-              )}
-            >
-              {entry.symptomCategory}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {entry.remedies.length}{" "}
-              {entry.remedies.length === 1 ? "remedy" : "remedies"}
-            </span>
-          </div>
-          <h3 className="font-display font-semibold text-base text-foreground leading-snug">
-            {entry.symptomName}
-          </h3>
-          {entry.description && (
-            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
-              {entry.description}
-            </p>
-          )}
-        </div>
-        <motion.div
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex-shrink-0 mt-1"
+      <div className="flex items-start gap-3 px-5 pt-5 pb-0">
+        {/* Rubric checkbox */}
+        <div
+          className="flex-shrink-0 mt-0.5 pt-0.5"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         >
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        </motion.div>
-      </button>
+          <Checkbox
+            id={`rubric-${entry.id}`}
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect(entry)}
+            aria-label={`Select rubric: ${entry.symptomName}`}
+            className={cn("border-border", isSelected && "border-primary")}
+            data-ocid={`repertory.checkbox.${index + 1}`}
+          />
+        </div>
+
+        {/* Accordion trigger */}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex-1 flex items-start gap-4 text-left pb-5 hover:bg-transparent focus-visible:outline-none"
+          aria-expanded={open}
+          data-ocid={`repertory.toggle.${index + 1}`}
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-2">
+              <span
+                className={cn(
+                  "inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold border",
+                  catColor,
+                )}
+              >
+                {entry.symptomCategory}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {entry.remedies.length}{" "}
+                {entry.remedies.length === 1 ? "remedy" : "remedies"}
+              </span>
+              {isSelected && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] py-0 px-1.5 border-primary/40 text-primary"
+                >
+                  Rubric selected
+                </Badge>
+              )}
+            </div>
+            <h3 className="font-display font-semibold text-base text-foreground leading-snug">
+              {entry.symptomName}
+            </h3>
+            {entry.description && (
+              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
+                {entry.description}
+              </p>
+            )}
+          </div>
+          <motion.div
+            animate={{ rotate: open ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex-shrink-0 mt-1"
+          >
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          </motion.div>
+        </button>
+      </div>
 
       <AnimatePresence initial={false}>
         {open && (
@@ -288,10 +632,14 @@ function CategorySection({
   category,
   entries,
   startIndex,
+  selectedIds,
+  onToggleSelect,
 }: {
   category: string;
   entries: RepertoryEntry[];
   startIndex: number;
+  selectedIds: Set<string>;
+  onToggleSelect: (entry: RepertoryEntry) => void;
 }) {
   return (
     <section data-ocid={`repertory.section.${category.toLowerCase()}`}>
@@ -306,7 +654,13 @@ function CategorySection({
       </div>
       <div className="grid gap-3">
         {entries.map((entry, i) => (
-          <SymptomCard key={entry.id} entry={entry} index={startIndex + i} />
+          <SymptomCard
+            key={entry.id}
+            entry={entry}
+            index={startIndex + i}
+            isSelected={selectedIds.has(entry.id)}
+            onToggleSelect={onToggleSelect}
+          />
         ))}
       </div>
     </section>
@@ -393,7 +747,6 @@ function SaveCaseModal({
             />
           </div>
 
-          {/* Snapshot preview */}
           {(selectedSymptoms.length > 0 || matchingRemedies.length > 0) && (
             <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
               {selectedSymptoms.length > 0 && (
@@ -501,7 +854,6 @@ function EditCaseModal({
   const [notes, setNotes] = useState(savedCase.clinicalNotes);
   const { mutate: updateCase, isPending } = useUpdateCase();
 
-  // Sync state when case changes
   useEffect(() => {
     setName(savedCase.name);
     setNotes(savedCase.clinicalNotes);
@@ -605,7 +957,6 @@ function SavedCaseCard({
         className="rounded-xl border border-border bg-card shadow-medical-sm overflow-hidden"
         data-ocid={`case_diary.item.${index + 1}`}
       >
-        {/* Header row */}
         <div className="flex items-start gap-3 p-4">
           <div className="flex-shrink-0 mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/8">
             <FileText className="h-4 w-4 text-primary" />
@@ -661,7 +1012,6 @@ function SavedCaseCard({
           </div>
         </div>
 
-        {/* Expanded detail */}
         <AnimatePresence initial={false}>
           {expanded && (
             <motion.div
@@ -720,7 +1070,6 @@ function SavedCaseCard({
           )}
         </AnimatePresence>
 
-        {/* Delete confirmation */}
         <AnimatePresence>
           {deleteConfirm && (
             <motion.div
@@ -792,7 +1141,6 @@ function CaseDiary({
 
   return (
     <>
-      {/* Panel toggle */}
       <div className="flex items-center justify-between mb-4">
         <button
           type="button"
@@ -830,7 +1178,6 @@ function CaseDiary({
         )}
       </div>
 
-      {/* Panel content */}
       <AnimatePresence>
         {visible && (
           <motion.div
@@ -843,7 +1190,6 @@ function CaseDiary({
           >
             <div className="rounded-xl border border-border bg-muted/20 p-4 mb-6">
               {!isAuthenticated ? (
-                /* Login prompt */
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -863,7 +1209,6 @@ function CaseDiary({
                 </motion.div>
               ) : (
                 <div className="space-y-3">
-                  {/* Search saved cases */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                     <Input
@@ -885,7 +1230,6 @@ function CaseDiary({
                     )}
                   </div>
 
-                  {/* Loading */}
                   {casesLoading && (
                     <div
                       className="space-y-2"
@@ -903,7 +1247,6 @@ function CaseDiary({
                     </div>
                   )}
 
-                  {/* Empty state */}
                   {!casesLoading && displayCases.length === 0 && (
                     <div
                       className="flex flex-col items-center gap-2 py-8 text-center"
@@ -921,7 +1264,6 @@ function CaseDiary({
                     </div>
                   )}
 
-                  {/* Cases list */}
                   {!casesLoading && displayCases.length > 0 && (
                     <div className="space-y-2" data-ocid="case_diary.list">
                       {displayCases.map((c, i) => (
@@ -946,6 +1288,68 @@ function CaseDiary({
   );
 }
 
+// ─── Selection Bar ────────────────────────────────────────────────────────────
+
+function SelectionBar({
+  count,
+  onAnalyze,
+  onClear,
+}: {
+  count: number;
+  onAnalyze: () => void;
+  onClear: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {count > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 12 }}
+          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+          className="sticky top-2 z-10 mb-5"
+        >
+          <div className="flex items-center justify-between gap-3 bg-card border border-primary/30 rounded-xl shadow-medical px-4 py-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold font-mono">
+                {count}
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                {count === 1
+                  ? "1 rubric selected — select more for multi-rubric analysis"
+                  : `${count} rubrics selected`}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs text-muted-foreground"
+                onClick={onClear}
+                data-ocid="repertory.clear_rubrics_button"
+              >
+                <X className="w-3.5 h-3.5 mr-1" />
+                Clear
+              </Button>
+              {count >= 2 && (
+                <Button
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={onAnalyze}
+                  data-ocid="repertory.analyze_button"
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  Analyse
+                </Button>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 export default function RepertoryPage() {
@@ -953,6 +1357,8 @@ export default function RepertoryPage() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<Category>("All");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showAnalysis, setShowAnalysis] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounce search
@@ -973,7 +1379,6 @@ export default function RepertoryPage() {
     useSearchRepertory(debouncedSearch);
   const { mutate: seedMutate } = useSeedRepertory();
 
-  // Seed on mount if authenticated and data is empty
   useEffect(() => {
     if (isAuthenticated && !allLoading && allEntries.length === 0) {
       seedMutate();
@@ -984,13 +1389,11 @@ export default function RepertoryPage() {
   const isLoading = isSearching ? searchLoading : allLoading;
   const baseEntries = isSearching ? searchResults : allEntries;
 
-  // Apply category filter
   const filteredEntries = useMemo(() => {
     if (activeCategory === "All") return baseEntries;
     return baseEntries.filter((e) => e.symptomCategory === activeCategory);
   }, [baseEntries, activeCategory]);
 
-  // Group by category for browse view
   const grouped = useMemo(() => {
     if (isSearching || activeCategory !== "All") return null;
     const map: Record<string, RepertoryEntry[]> = {};
@@ -1002,7 +1405,6 @@ export default function RepertoryPage() {
     return map;
   }, [filteredEntries, isSearching, activeCategory]);
 
-  // Cumulative start indexes for deterministic data-ocid
   const sectionStartIndexes = useMemo(() => {
     if (!grouped) return {} as Record<string, number>;
     let count = 0;
@@ -1016,20 +1418,54 @@ export default function RepertoryPage() {
 
   const totalEntries = filteredEntries.length;
 
-  // Derive symptom labels and remedy names for current view (for case saving)
-  const currentSymptoms = useMemo(
-    () => filteredEntries.map((e) => e.symptomName),
-    [filteredEntries],
+  // Multi-rubric selection state
+  function handleToggleSelect(entry: RepertoryEntry) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(entry.id)) {
+        next.delete(entry.id);
+      } else {
+        next.add(entry.id);
+      }
+      return next;
+    });
+    // Hide analysis panel if a rubric is deselected
+    setShowAnalysis(false);
+  }
+
+  function handleClearSelection() {
+    setSelectedIds(new Set());
+    setShowAnalysis(false);
+  }
+
+  // Get selected entry objects in insertion order
+  const selectedEntries = useMemo(
+    () => allEntries.filter((e) => selectedIds.has(e.id)),
+    [allEntries, selectedIds],
   );
+
+  // For case diary: derive symptom labels and remedy names
+  const currentSymptoms = useMemo(
+    () =>
+      showAnalysis && selectedEntries.length >= 2
+        ? selectedEntries.map((e) => e.symptomName)
+        : filteredEntries.map((e) => e.symptomName),
+    [filteredEntries, selectedEntries, showAnalysis],
+  );
+
   const currentRemedies = useMemo(() => {
+    const source =
+      showAnalysis && selectedEntries.length >= 2
+        ? selectedEntries
+        : filteredEntries;
     const names = new Set<string>();
-    for (const entry of filteredEntries) {
+    for (const entry of source) {
       for (const r of entry.remedies) {
         if (Number(r.grade) >= 2) names.add(r.remedyName);
       }
     }
     return Array.from(names).slice(0, 20);
-  }, [filteredEntries]);
+  }, [filteredEntries, selectedEntries, showAnalysis]);
 
   return (
     <div className="min-h-screen bg-background" data-ocid="repertory.page">
@@ -1050,7 +1486,8 @@ export default function RepertoryPage() {
                 Repertory
               </h1>
               <p className="text-body-base text-muted-foreground mt-0.5">
-                Find remedies by symptom — classical reverse lookup
+                Select rubrics (symptoms) and run classical sum-of-grades
+                analysis
               </p>
             </div>
           </motion.div>
@@ -1124,6 +1561,23 @@ export default function RepertoryPage() {
           currentRemedies={currentRemedies}
         />
 
+        {/* ── Selection bar (sticky) ── */}
+        <SelectionBar
+          count={selectedIds.size}
+          onAnalyze={() => setShowAnalysis(true)}
+          onClear={handleClearSelection}
+        />
+
+        {/* ── Classical Analysis Panel (2+ rubrics) ── */}
+        <AnimatePresence>
+          {showAnalysis && selectedEntries.length >= 2 && (
+            <ClassicalAnalysisPanel
+              selectedEntries={selectedEntries}
+              onClear={handleClearSelection}
+            />
+          )}
+        </AnimatePresence>
+
         {/* Result count summary */}
         {!isLoading && (
           <motion.div
@@ -1155,6 +1609,17 @@ export default function RepertoryPage() {
                       in{" "}
                       <span className="font-medium text-foreground">
                         {activeCategory}
+                      </span>
+                    </>
+                  )}
+                  {selectedIds.size > 0 && (
+                    <>
+                      {" "}
+                      ·{" "}
+                      <span className="text-primary font-medium">
+                        {selectedIds.size} rubric
+                        {selectedIds.size !== 1 ? "s" : ""} selected — check
+                        boxes to add more
                       </span>
                     </>
                   )}
@@ -1212,6 +1677,8 @@ export default function RepertoryPage() {
                 entry={entry}
                 index={i}
                 defaultOpen={filteredEntries.length <= 3}
+                isSelected={selectedIds.has(entry.id)}
+                onToggleSelect={handleToggleSelect}
               />
             ))}
           </div>
@@ -1221,7 +1688,13 @@ export default function RepertoryPage() {
         {!isLoading && !isSearching && activeCategory !== "All" && (
           <div className="grid gap-3" data-ocid="repertory.list">
             {filteredEntries.map((entry, i) => (
-              <SymptomCard key={entry.id} entry={entry} index={i} />
+              <SymptomCard
+                key={entry.id}
+                entry={entry}
+                index={i}
+                isSelected={selectedIds.has(entry.id)}
+                onToggleSelect={handleToggleSelect}
+              />
             ))}
           </div>
         )}
@@ -1235,6 +1708,8 @@ export default function RepertoryPage() {
                 category={cat}
                 entries={catEntries}
                 startIndex={sectionStartIndexes[cat] ?? 0}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
               />
             ))}
           </div>

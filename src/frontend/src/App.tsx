@@ -22,6 +22,7 @@ const OrgononPage = lazy(() => import("./pages/Organon"));
 const SourcedRemedyDetailPage = lazy(
   () => import("./pages/SourcedRemedyDetail"),
 );
+const AdminPage = lazy(() => import("./pages/Admin"));
 
 function PageFallback() {
   return (
@@ -92,6 +93,11 @@ const sourcedRemedyDetailRoute = createRoute({
   path: "/sourced-remedy/$id",
   component: SourcedRemedyDetailPage,
 });
+const adminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  component: AdminPage,
+});
 
 const routeTree = rootRoute.addChildren([
   homeRoute,
@@ -104,6 +110,7 @@ const routeTree = rootRoute.addChildren([
   repertoryRoute,
   organonRoute,
   sourcedRemedyDetailRoute,
+  adminRoute,
 ]);
 
 const router = createRouter({ routeTree });
