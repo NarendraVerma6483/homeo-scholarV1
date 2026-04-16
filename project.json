@@ -1,0 +1,24 @@
+{
+  "overview": "Homeo Scholar is a premium homoeopathic knowledge platform for students and physicians. It provides a multi-source Materia Medica browser (Boericke, Allen's Keynotes, Lotus), interactive flashcards, quizzes with leaderboards, spaced repetition, a Repertory case diary, and an Organon reader — all with a professional premium UI supporting dark and light themes.",
+  "features": [
+    "Multi-source Materia Medica browser with Boericke, Allen's Keynotes, and Lotus tabs",
+    "Persistent Repertory case diary — save and name clinical cases with symptom selections and notes",
+    "Premium home screen with refined typography, elevated cards, and subtle gradients",
+    "Interactive flashcards (Symptom→Remedy and Multiple Choice formats)",
+    "Quizzes with difficulty levels and leaderboards (top 10 per difficulty)",
+    "Spaced repetition with adaptive algorithm",
+    "Organon reader with all 291 aphorisms and student commentary",
+    "Internet Identity login with persistent study progress and bookmarks"
+  ],
+  "category": "education",
+  "tags": [
+    "homoeopathy",
+    "medical-education",
+    "materia-medica",
+    "flashcards",
+    "quizzes",
+    "case-analysis",
+    "spaced-repetition"
+  ],
+  "last_updated": "2026-04-16T02:03:16.873Z"
+}

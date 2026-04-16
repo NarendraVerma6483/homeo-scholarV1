@@ -1,0 +1,200 @@
+type UserStats = 
+ record {
+   averageAccuracy: float64;
+   totalSessions: nat;
+   totalStudyTimeSecs: nat;
+ };
+type UserProfile = 
+ record {
+   createdAt: Timestamp;
+   displayName: text;
+   "principal": principal;
+   themePreference: ThemePreference;
+ };
+type Timestamp = int;
+type Time = int;
+type ThemePreference = 
+ variant {
+   dark;
+   light;
+ };
+type StudySession = 
+ record {
+   accuracy: float64;
+   durationSecs: nat;
+   mode: StudyMode;
+   remedyIds: vec text;
+   sessionId: text;
+   timestamp: Timestamp;
+   userId: principal;
+ };
+type StudyMode = 
+ variant {
+   flashcard;
+   quiz;
+ };
+type SpacedRepCard = 
+ record {
+   dueDate: Timestamp;
+   easeFactor: float64;
+   intervalDays: nat;
+   lastReviewed: Timestamp;
+   remedyId: text;
+   repetitions: nat;
+   userId: principal;
+ };
+type SourcedRemedyModalities = 
+ record {
+   better: vec text;
+   worse: vec text;
+ };
+type SourcedRemedy = 
+ record {
+   clinicalUses: vec text;
+   constitution: text;
+   id: text;
+   keynotes: vec text;
+   latinName: text;
+   mentalSymptoms: vec text;
+   modalities: SourcedRemedyModalities;
+   name: text;
+   physicalSymptoms: vec text;
+   remedyId: text;
+   source: MateriaSource;
+ };
+type SavedCase = 
+ record {
+   clinicalNotes: text;
+   createdAt: Time;
+   id: text;
+   matchingRemedies: vec text;
+   name: text;
+   selectedSymptoms: vec text;
+   updatedAt: Time;
+   userId: text;
+ };
+type RepertoryRemedy = 
+ record {
+   grade: nat;
+   notes: text;
+   remedyId: text;
+   remedyName: text;
+ };
+type RepertoryEntry = 
+ record {
+   description: text;
+   id: text;
+   remedies: vec RepertoryRemedy;
+   symptomCategory: text;
+   symptomName: text;
+ };
+type RemedyProgress = 
+ record {
+   correctCount: nat;
+   incorrectCount: nat;
+   lastStudied: Timestamp;
+   remedyId: text;
+   userId: principal;
+ };
+type Remedy = 
+ record {
+   category: text;
+   clinicalNotes: text;
+   description: text;
+   id: text;
+   keySymptoms: vec text;
+   latinName: text;
+   mentalPicture: text;
+   modalities: text;
+   name: text;
+   physicalSymptoms: vec text;
+ };
+type QuizAttempt = 
+ record {
+   attemptId: text;
+   difficulty: Difficulty;
+   score: nat;
+   timeSecs: nat;
+   timestamp: Timestamp;
+   total: nat;
+   userId: principal;
+ };
+type MateriaSource = 
+ variant {
+   allensKeynotes;
+   boericke;
+   lotus;
+ };
+type LeaderboardEntry = 
+ record {
+   difficulty: Difficulty;
+   displayName: text;
+   percentage: float64;
+   score: nat;
+   timestamp: Timestamp;
+   total: nat;
+   userId: principal;
+ };
+type Difficulty = 
+ variant {
+   advanced;
+   beginner;
+   intermediate;
+ };
+type Aphorism = 
+ record {
+   authenticText: text;
+   commentary: text;
+   id: nat;
+   keyThemes: vec text;
+   number: nat;
+   section: text;
+ };
+service : {
+  deleteCase: (id: text) -> (bool);
+  deleteRemedy: (id: text) -> ();
+  getAllCards: () -> (vec SpacedRepCard) query;
+  getAphorism: (number: nat) -> (opt Aphorism) query;
+  getCaseById: (id: text) -> (opt SavedCase) query;
+  getDueCards: () -> (vec SpacedRepCard) query;
+  getLeaderboard: (difficulty: Difficulty) -> (vec LeaderboardEntry) query;
+  getMyBookmarks: () -> (vec text) query;
+  getMyProfile: () -> (opt UserProfile) query;
+  getMyQuizHistory: () -> (vec QuizAttempt) query;
+  getMyRemedyProgress: () -> (vec RemedyProgress) query;
+  getMySessions: () -> (vec StudySession) query;
+  getMyStats: () -> (UserStats) query;
+  getRemedy: (id: text) -> (opt Remedy) query;
+  getRepertoryEntry: (id: text) -> (opt RepertoryEntry) query;
+  getSourcedRemedy: (id: text) -> (opt SourcedRemedy) query;
+  initializeCards: () -> ();
+  listAphorisms: () -> (vec Aphorism) query;
+  listMyCases: () -> (vec SavedCase) query;
+  listRemedies: () -> (vec Remedy) query;
+  listRepertoryEntries: () -> (vec RepertoryEntry) query;
+  listSourcedRemedies: () -> (vec SourcedRemedy) query;
+  listSourcedRemediesBySource: (source: MateriaSource) ->
+   (vec SourcedRemedy) query;
+  listSourcesByRemedyName: (name: text) -> (vec SourcedRemedy) query;
+  recordReview: (remedyId: text, quality: nat) -> (SpacedRepCard);
+  registerUser: (displayName: text) -> ();
+  saveCaseAnalysis: (name: text, selectedSymptoms: vec text, clinicalNotes:
+   text, matchingRemedies: vec text) -> (text);
+  saveQuizAttempt: (attempt: QuizAttempt) -> ();
+  saveStudySession: (session: StudySession) -> ();
+  searchAphorisms: (searchTerm: text) -> (vec Aphorism) query;
+  searchMyCases: (keyword: text) -> (vec SavedCase) query;
+  searchRemediesByName: (term: text) -> (vec Remedy) query;
+  searchRemediesBySymptom: (keyword: text) -> (vec Remedy) query;
+  searchRepertory: (symptom: text) -> (vec RepertoryEntry) query;
+  seedOrganon: () -> ();
+  seedRemedies: () -> ();
+  seedRepertory: () -> ();
+  seedSourcedRemedies: () -> ();
+  submitLeaderboardEntry: (displayName: text, score: nat, total: nat,
+   difficulty: Difficulty) -> ();
+  toggleBookmark: (remedyId: text) -> ();
+  updateCase: (id: text, name: text, clinicalNotes: text) -> (bool);
+  updateRemedyProgress: (remedyId: text, correct: bool) -> ();
+  upsertRemedy: (remedy: Remedy) -> ();
+}
